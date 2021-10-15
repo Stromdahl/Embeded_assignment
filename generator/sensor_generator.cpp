@@ -48,7 +48,7 @@ int main () {
     while(true){
         std::string values = toString(sensorValues);
         write_to_file(FILE_PATH, values);
-        changeValues(sensorValues, 5);
+        changeValues(sensorValues, NUM_SENSORS*.1);
         usleep(1000000);
     }
     return 0;
