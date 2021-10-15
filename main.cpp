@@ -2,30 +2,37 @@
 #include <fstream>
 #include <bitset>
 
+struct Sensor{
+    int nr;
+    bool state;
+};
 
 class SensorString{
 public:
-    SensorString(std::string* _sensorString): sensorString(_sensorString){}
+    explicit SensorString(std::string* _sensorString): sensorString(_sensorString){}
 
-    void getNextSensor(int* outSensorNr, bool* outState){
+    Sensor* getNextSensor(){
         //Returns the value of the next sensor
         std::string *sensorNrString = getNext();
         std::string *sensorStateString = getNext();
 
         if(sensorNrString == nullptr || sensorStateString == nullptr){
-            outSensorNr = nullptr;
-            outState = nullptr;
-            return;
+            return nullptr;
         }
-        *outSensorNr = std::stoi(*sensorNrString);
-        *outState = (*sensorStateString == "True") ? true:false;
+        // = std::stoi(*sensorNrString);
+        // *outState = (*sensorStateString == "True") ? true:false;
+        Sensor* sensor;
+        sensor->nr = std::stoi(*sensorNrString);
+        sensor->state = (*sensorStateString == "True") ? true : false;
+        return sensor;
     }
+
 
 private:
 
     std::string* getNext(){
         //Returns a pointer to substring from beginning of the string to the delimiter
-        std::string* result;
+        std::string *result = nullptr;
         std::string delimiter = ";";
         size_t pos = sensorString->find(delimiter);
 
@@ -54,24 +61,23 @@ public:
     void getValuesFromString(std::string* valuesString){
         SensorString sensorString(valuesString);
 
-        int *sensorNr = nullptr;
-        bool* sensorState = nullptr;
+
 
         while (true) {
-            sensorString.getNextSensor(sensorNr, sensorState);
+            Sensor* sensor = sensorString.getNextSensor();
 
-            if(sensorNr == nullptr || sensorState == nullptr)
+            if(sensor == nullptr)
                 return;
 
-            setSensorState(*sensorNr, *sensorState);
+            setSensorState(sensor);
         }
     }
 
-    void setSensorState(int index, bool state){
-        int byteIndex = index - 1 / 8;
-        int bitIndex = index - 1 % 8;
+    void setSensorState(Sensor* sensor){
+        int byteIndex = sensor->nr - 1 / 8;
+        int bitIndex = sensor->nr - 1 % 8;
 
-        if (state)
+        if (sensor->state)
             values[byteIndex] |= 1UL << bitIndex;
         else
             values[byteIndex] &= ~(1UL << bitIndex);
