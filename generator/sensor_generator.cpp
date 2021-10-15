@@ -54,6 +54,4 @@ int main () {
     return 0;
 }
 
-
-
 #pragma clang diagnostic pop
