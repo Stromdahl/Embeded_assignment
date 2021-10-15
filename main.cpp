@@ -1,6 +1,8 @@
 #include <iostream>
+#include <unistd.h>
 #include <fstream>
 #include <bitset>
+#include <chrono>
 
 std::string read_from_file(const char* path){
     std::ifstream file(path);
@@ -62,6 +64,7 @@ void printSensors(uint8_t* sensors){
 
 
 void compareSensorValues(const uint8_t* sensorValues1, const uint8_t* sensorValues2){
+    std::cout << "Comparing... " << std::endl;
     uint8_t delta;
     for(int nr = 0; nr < 236; nr++){
         int byteIndex = nr / 8; //Get witch byte to be accessed
@@ -77,28 +80,44 @@ void compareSensorValues(const uint8_t* sensorValues1, const uint8_t* sensorValu
     }
 }
 
+#pragma clang diagnostic push
+#pragma ide diagnostic ignored "EndlessLoop"
 int main(){
     std::cout << "Start" << std::endl;
 
     std::string content;
-    content = read_from_file("sensor_values.txt");
+    content = read_from_file("../sensor_values.txt");
     uint8_t* sensorValues1 = getValuesFromString(&content);
 
-    uint8_t
+    // usleep(1000000);
 
-    content = read_from_file("sensor_values.txt");
-    uint8_t* sensorValues2 = getValuesFromString(&content);
+    // content = read_from_file("sensor_values.txt");
+    // uint8_t* sensorValues2 = getValuesFromString(&content);
 
-    setSensorState(sensorValues2, 3, false);
-    setSensorState(sensorValues2, 10, true);
-    setSensorState(sensorValues2, 200, true);
+    // compareSensorValues(sensorValues1, sensorValues2);
 
+   while (true){
+       usleep(1000000);
 
-    compareSensorValues(sensorValues1, sensorValues2);
+       std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
 
+       content = read_from_file("../sensor_values.txt");
+       uint8_t* sensorValues2 = getValuesFromString(&content);
+
+       compareSensorValues(sensorValues1, sensorValues2);
+
+       uint8_t* tmp = sensorValues1;
+       sensorValues1 = sensorValues2;
+       delete tmp;
+       std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+
+       std::cout << "Time = " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[µs]" << std::endl;
+       std::cout << "Time = " << std::chrono::duration_cast<std::chrono::nanoseconds> (end - begin).count() << "[ns]" << std::endl;
+   }
 //    printSensors(sensorValues1);
 //    std::cout << std::endl;
 //    printSensors(sensorValues2);
     std::cout << "Hello world" << std::endl;
     return 0;
 }
+#pragma clang diagnostic pop

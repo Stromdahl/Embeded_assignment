@@ -5,7 +5,7 @@
 #include <string>
 
 #define NUM_SENSORS 236
-#define FILE_PATH "../sensor_values.txt"
+#define FILE_PATH "sensor_values.txt"
 
 float getRandom(){
     return (float) rand()/RAND_MAX;
@@ -48,7 +48,7 @@ int main () {
     while(true){
         std::string values = toString(sensorValues);
         write_to_file(FILE_PATH, values);
-        changeValues(sensorValues, NUM_SENSORS*.1);
+        changeValues(sensorValues, 5);
         usleep(1000000);
     }
     return 0;
