@@ -2,95 +2,6 @@
 #include <fstream>
 #include <bitset>
 
-struct Sensor{
-    int nr;
-    bool state;
-};
-
-class SensorString{
-public:
-    explicit SensorString(std::string* _sensorString): sensorString(_sensorString){}
-
-    Sensor* getNextSensor(){
-        //Returns the value of the next sensor
-        std::string *sensorNrString = getNext();
-        std::string *sensorStateString = getNext();
-
-        if(sensorNrString == nullptr || sensorStateString == nullptr){
-            return nullptr;
-        }
-        // = std::stoi(*sensorNrString);
-        // *outState = (*sensorStateString == "True") ? true:false;
-        Sensor* sensor;
-        sensor->nr = std::stoi(*sensorNrString);
-        sensor->state = (*sensorStateString == "True") ? true : false;
-        return sensor;
-    }
-
-
-private:
-
-    std::string* getNext(){
-        //Returns a pointer to substring from beginning of the string to the delimiter
-        std::string *result = nullptr;
-        std::string delimiter = ";";
-        size_t pos = sensorString->find(delimiter);
-
-        if(pos == std::string::npos)
-            return nullptr;
-
-        *result = sensorString->substr(0, pos);
-        sensorString->erase(0, pos + delimiter.length());
-        return result;
-    }
-
-    std::string* sensorString;
-};
-
-class Sensors{
-public:
-
-    Sensors(){
-        values = new uint8_t[30];
-    }
-
-    ~Sensors(){
-        delete values;
-    }
-
-    void getValuesFromString(std::string* valuesString){
-        SensorString sensorString(valuesString);
-
-
-
-        while (true) {
-            Sensor* sensor = sensorString.getNextSensor();
-
-            if(sensor == nullptr)
-                return;
-
-            setSensorState(sensor);
-        }
-    }
-
-    void setSensorState(Sensor* sensor){
-        int byteIndex = sensor->nr - 1 / 8;
-        int bitIndex = sensor->nr - 1 % 8;
-
-        if (sensor->state)
-            values[byteIndex] |= 1UL << bitIndex;
-        else
-            values[byteIndex] &= ~(1UL << bitIndex);
-    }
-
-private:
-    uint8_t *values;
-public:
-    uint8_t *getValues() const {
-        return values;
-    }
-};
-
 std::string read_from_file(const char* path){
     std::ifstream file(path);
     std::string line;
@@ -101,7 +12,41 @@ std::string read_from_file(const char* path){
     return line;
 }
 
-std::string bin_str8(unsigned char n) {
+void setSensorState(uint8_t* sensorStates, int nr, bool state){
+    int byteIndex = nr / 8; //Get witch byte to be accessed
+    int bitIndex = nr % 8; //Get witch bit that will be set in the byte
+
+    if (state)
+        sensorStates[byteIndex] |= 1UL << bitIndex;
+    else
+        sensorStates[byteIndex] &= ~(1UL << bitIndex);
+}
+
+uint8_t* getValuesFromString(std::string* valuesString){
+    auto* sensorStates = new uint8_t[30];
+
+    std::string delimiter = ";";
+
+    size_t pos;
+    int nr;
+    bool state;
+    while (true) {
+        //Get sensor nr from string
+        if((pos = valuesString->find(delimiter)) == std::string::npos) break;
+        nr = stoi(valuesString->substr(0, pos));
+        valuesString->erase(0, pos + delimiter.length());
+
+        //Get sensor state from string
+        if((pos = valuesString->find(delimiter)) == std::string::npos) break;
+        state = valuesString->substr(0, pos) == "True";
+        valuesString->erase(0, pos + delimiter.length());
+
+        setSensorState(sensorStates, nr-1, state);
+    }
+    return sensorStates;
+}
+
+std::string bin_str8(uint8_t n) {
     std::bitset<8> bs(n);
     return bs.to_string();
 }
@@ -115,28 +60,45 @@ void printSensors(uint8_t* sensors){
     }
 }
 
+
+void compareSensorValues(const uint8_t* sensorValues1, const uint8_t* sensorValues2){
+    uint8_t delta;
+    for(int nr = 0; nr < 236; nr++){
+        int byteIndex = nr / 8; //Get witch byte to be accessed
+        int bitIndex = nr % 8; //Get witch bit that will be set in the byte
+
+        uint8_t flag1 = sensorValues1[byteIndex] & (1 << bitIndex);
+        uint8_t flag2 = sensorValues2[byteIndex] & (1 << bitIndex);
+
+        if(flag1 != flag2) {
+            std::cout << "Sensor nr " << nr + 1 << " changed from "
+                      << (flag2 > 0 ? "false to true" : "true to false") << std::endl;
+        }
+    }
+}
+
 int main(){
     std::cout << "Start" << std::endl;
 
     std::string content;
     content = read_from_file("sensor_values.txt");
+    uint8_t* sensorValues1 = getValuesFromString(&content);
 
-    Sensors sensors;
+    uint8_t
 
-    sensors.getValuesFromString(&content);
+    content = read_from_file("sensor_values.txt");
+    uint8_t* sensorValues2 = getValuesFromString(&content);
+
+    setSensorState(sensorValues2, 3, false);
+    setSensorState(sensorValues2, 10, true);
+    setSensorState(sensorValues2, 200, true);
 
 
-    // uint8_t* values = new uint8_t[30];
+    compareSensorValues(sensorValues1, sensorValues2);
 
-    // valueStringToBinary(values, content);
-
-    // // for(int i = 0; i < 236; i++){
-    // //     bool state = (i % 8 == 0);
-    // //     setSensorState(values, i, state);
-    // // }
-
-    //printSensors(sensors.getValues());
-
+//    printSensors(sensorValues1);
+//    std::cout << std::endl;
+//    printSensors(sensorValues2);
     std::cout << "Hello world" << std::endl;
     return 0;
 }

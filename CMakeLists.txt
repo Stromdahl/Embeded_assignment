@@ -3,4 +3,4 @@ project(assinment3)
 
 set(CMAKE_CXX_STANDARD 20)
 
-add_executable(assinment3 main.cpp sensor_generator.cpp)
+add_executable(assinment3 main.cpp)
